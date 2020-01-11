@@ -32,6 +32,7 @@ public class ReadWriteCSV {
         int maxLength;
         int rowNum = 0;
         while ((row = csvReader.readLine()) != null) {
+            row = removeBom(row);
             rowNum++;
             if (!skipFirst || rowNum > 1) {
                 data = row.replaceAll(String.valueOf((char) 160), " ").split(",", -1);
@@ -77,5 +78,10 @@ public class ReadWriteCSV {
         return Normalizer
                 .normalize(src, Normalizer.Form.NFD)
                 .replaceAll("[^\\p{ASCII}]", "");
+    }
+
+    private String removeBom(String input) {
+        String UTF8_BOM = "\uFEFF";
+        return input.startsWith(UTF8_BOM) ? input.substring(1) : input;
     }
 }
