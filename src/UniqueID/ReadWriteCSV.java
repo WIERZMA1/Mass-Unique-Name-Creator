@@ -81,7 +81,6 @@ public class ReadWriteCSV {
     }
 
     private String removeBom(String input) {
-        String UTF8_BOM = "\uFEFF";
-        return input.startsWith(UTF8_BOM) ? input.substring(1) : input;
+        return input.startsWith("\uFEFF") ? input.substring(1) : input;
     }
 }
