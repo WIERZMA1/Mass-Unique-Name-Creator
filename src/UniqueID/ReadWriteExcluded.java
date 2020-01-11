@@ -1,4 +1,4 @@
-package KeskoName;
+package UniqueID;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -17,7 +17,6 @@ public class ReadWriteExcluded {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     public List<String> read() {
