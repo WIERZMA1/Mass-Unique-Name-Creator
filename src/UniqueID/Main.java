@@ -24,17 +24,26 @@ public class Main extends Application {
     private ReadWriteExcluded readWriteExcluded = new ReadWriteExcluded();
     private FileChooser fc = new FileChooser();
 
+    private Button startSingle = new Button("Run single");
     private Button startBtn = new Button("Run");
+    private Button clear = new Button("Clear");
     private Button open = new Button("Open File");
     private Button exitBtn = new Button("Exit");
 
     private CheckBox skipFirstRow = new CheckBox("Skip first row");
 
+    private TextField name = new TextField();
+    private TextField country = new TextField();
+    private TextField code = new TextField();
+    private TextField singleOutput = new TextField();
+
     private TextField nameCol = new TextField();
     private TextField countryCol = new TextField();
     private TextField codeCol = new TextField();
 
+    private HBox singleInput = new HBox(name, country, code);
     private HBox columns = new HBox(nameCol, countryCol, codeCol);
+    private HBox buttons = new HBox(startBtn, clear, exitBtn);
 
     private Label excludedLabel = new Label("Excluded values:");
     private Label fileLabel = new Label();
@@ -50,6 +59,11 @@ public class Main extends Application {
         for (String exc : readWriteExcluded.read()) {
             excluded.appendText(exc + "\n");
         }
+        name.setPromptText("Name");
+        country.setPromptText("Country");
+        code.setPromptText("Code");
+        singleOutput.setPromptText("Output");
+        singleOutput.setEditable(false);
         skipFirstRow.setSelected(true);
         countryCol.setPromptText("Country Col");
         nameCol.setPromptText("Name Col");
@@ -57,6 +71,27 @@ public class Main extends Application {
         company.setPromptText("Company prefix");
         fileLabel.setMaxWidth(400);
 
+        clear.setOnAction(event -> {
+            company.setText("");
+            name.setText("");
+            country.setText("");
+            code.setText("");
+            singleOutput.setText("");
+            nameCol.setText("");
+            countryCol.setText("");
+            codeCol.setText("");
+        });
+        startSingle.setOnAction(event -> {
+            if (name.getText().length() <= 0) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "Company name has to be provided");
+                error.setTitle("Missing name");
+                error.showAndWait();
+            } else {
+                singleOutput.setText(readWriteCSV.runSingle(name.getText(), company.getText().toLowerCase(), country.getText(),
+                        code.getText(), Arrays.asList(excluded.getText().toLowerCase().split("\n"))));
+            }
+        });
         startBtn.setOnAction(event -> {
             if (parseInput(nameCol) < 0) {
                 Alert error = new Alert(Alert.AlertType.ERROR,
@@ -109,22 +144,26 @@ public class Main extends Application {
         gridPane.setHgap(10);
         gridPane.setVgap(10);
 
-        gridPane.add(skipFirstRow, 0, 0);
-        gridPane.add(columns, 1, 0);
+        gridPane.add(company, 1, 0);
+        gridPane.add(singleOutput, 1, 1);
 
-        gridPane.add(company, 1, 1);
+        gridPane.add(startSingle, 0, 2);
+        gridPane.add(singleInput, 1, 2);
 
-        gridPane.add(excludedLabel, 0, 2);
-        gridPane.add(excluded, 1, 2);
+        gridPane.add(skipFirstRow, 0, 3);
+        gridPane.add(columns, 1, 3);
 
-        gridPane.add(startBtn, 0, 3);
-        gridPane.add(exitBtn, 0, 3);
-        setHalignment(exitBtn, HPos.RIGHT);
-        gridPane.add(open, 1, 3);
+        gridPane.add(excludedLabel, 0, 4);
+        gridPane.add(excluded, 1, 4);
+
+        gridPane.add(buttons, 0, 5);
+        gridPane.add(open, 1, 5);
         setHalignment(open, HPos.RIGHT);
-        gridPane.add(fileLabel, 1, 3);
+        gridPane.add(fileLabel, 1, 5);
 
         Scene scene = new Scene(gridPane);
+
+        skipFirstRow.requestFocus();
 
         primaryStage.setScene(scene);
         primaryStage.setTitle("Unique ID creator");

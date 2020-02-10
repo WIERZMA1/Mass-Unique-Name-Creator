@@ -17,6 +17,10 @@ public class ReadWriteCSV {
         }
     }
 
+    public String runSingle(String name, String company, String country, String code, List<String> excluded) {
+        return createUniqueId(name, company, country, code, excluded);
+    }
+
     private void read(File file, String company, List<String> excluded, boolean skipFirst,
                       int countryCol, int nameCol, int codeCol) throws Exception {
         BufferedReader csvReader = new BufferedReader(new InputStreamReader(
@@ -25,11 +29,10 @@ public class ReadWriteCSV {
                 new FileOutputStream(createFilename(file)), StandardCharsets.UTF_8));
         String row;
         String[] data;
-        company = company.equals("") ? "" : company.toLowerCase() + "-";
         String name;
         String country = "";
         String code = "";
-        int maxLength;
+//        int maxLength;
         int rowNum = 0;
         while ((row = csvReader.readLine()) != null) {
             row = removeBom(row);
@@ -42,8 +45,7 @@ public class ReadWriteCSV {
                 if (codeCol >= 0) {
                     code = data[codeCol - 1].trim().equals("") ? "" : "-" + data[codeCol - 1].trim().toLowerCase();
                 }
-                maxLength = 30 - (company.trim().length() + country.length() + code.length());
-                name = company + country + createName(data[nameCol - 1], maxLength, excluded) + code;
+                name = createUniqueId(data[nameCol - 1], company, data[countryCol - 1], data[codeCol - 1], excluded);
                 data[data.length - 1] = name;
                 for (String cell : data) {
                     csvWriter.append(String.join(",", cell));
@@ -72,6 +74,14 @@ public class ReadWriteCSV {
         }
         name = name.replaceAll("[^\\p{L}\\p{Nd}]+", ""); // Leave only letters and digits
         return name.length() > maxLength ? name.substring(0, maxLength) : name;
+    }
+
+    private String createUniqueId(String name, String company, String country, String code, List<String> excluded) {
+        company = company.trim().equals("") ? "" : company.trim().toLowerCase() + "-";
+        country = country.trim().equals("") ? "" : country.trim().toLowerCase() + "-";
+        code = code.trim().equals("") ? "" : "-" + code.trim().toLowerCase();
+        int maxLength = 30 - (company.trim().length() + country.length() + code.length());
+        return company + country + createName(name, maxLength, excluded) + code;
     }
 
     private String unaccent(String src) {
