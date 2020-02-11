@@ -13,13 +13,16 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Optional;
+import java.util.prefs.Preferences;
 
 import static javafx.scene.layout.GridPane.setHalignment;
 
 public class Main extends Application {
 
-    private File file = new File(System.getProperty("user.dir"));
+    private static final String USER_DIR = "UserDir";
+    private Preferences pref = Preferences.userNodeForPackage(getClass());
+    private File dir = new File(pref.get(USER_DIR, System.getProperty("user.dir")));
+    private File file;
     private ReadWriteCSV readWriteCSV = new ReadWriteCSV();
     private ReadWriteExcluded readWriteExcluded = new ReadWriteExcluded();
     private FileChooser fc = new FileChooser();
@@ -29,6 +32,7 @@ public class Main extends Application {
     private Button clear = new Button("Clear");
     private Button open = new Button("Open File");
     private Button exitBtn = new Button("Exit");
+    private Button singleMass = new Button("Single");
 
     private CheckBox skipFirstRow = new CheckBox("Skip first row");
 
@@ -37,12 +41,7 @@ public class Main extends Application {
     private TextField code = new TextField();
     private TextField singleOutput = new TextField();
 
-    private TextField nameCol = new TextField();
-    private TextField countryCol = new TextField();
-    private TextField codeCol = new TextField();
-
-    private HBox singleInput = new HBox(name, country, code);
-    private HBox columns = new HBox(nameCol, countryCol, codeCol);
+    private HBox input = new HBox(name, country, code);
     private HBox buttons = new HBox(startBtn, clear, exitBtn);
 
     private Label excludedLabel = new Label("Excluded values:");
@@ -65,9 +64,6 @@ public class Main extends Application {
         singleOutput.setPromptText("Output");
         singleOutput.setEditable(false);
         skipFirstRow.setSelected(true);
-        countryCol.setPromptText("Country Col");
-        nameCol.setPromptText("Name Col");
-        codeCol.setPromptText("Code Col");
         company.setPromptText("Company prefix");
         fileLabel.setMaxWidth(400);
 
@@ -77,9 +73,6 @@ public class Main extends Application {
             country.setText("");
             code.setText("");
             singleOutput.setText("");
-            nameCol.setText("");
-            countryCol.setText("");
-            codeCol.setText("");
         });
         startSingle.setOnAction(event -> {
             if (name.getText().length() <= 0) {
@@ -93,32 +86,46 @@ public class Main extends Application {
             }
         });
         startBtn.setOnAction(event -> {
-            if (parseInput(nameCol) < 0) {
-                Alert error = new Alert(Alert.AlertType.ERROR,
-                        "Company name column has to be provided");
-                error.setTitle("Missing name");
-                error.showAndWait();
-            } else if (fileLabel.getText().equals("")) {
-                Alert error = new Alert(Alert.AlertType.ERROR,
-                        "Open CSV file");
-                error.setTitle("CSV file missing");
-                error.showAndWait();
+            if (singleMass.getText().equals("Single")) {
+                if (name.getText().length() <= 0) {
+                    Alert error = new Alert(Alert.AlertType.ERROR,
+                            "Company name has to be provided");
+                    error.setTitle("Missing name");
+                    error.showAndWait();
+                } else {
+                    singleOutput.setText(readWriteCSV.runSingle(name.getText(), company.getText().toLowerCase(), country.getText(),
+                            code.getText(), Arrays.asList(excluded.getText().toLowerCase().split("\n"))));
+                }
             } else {
-                readWriteCSV.run(file, company.getText(), skipFirstRow.isSelected(),
-                        parseInput(countryCol), parseInput(nameCol), parseInput(codeCol),
-                        Arrays.asList(excluded.getText().toLowerCase().split("\n")));
-                Alert done = new Alert(Alert.AlertType.INFORMATION,
-                        "ID's has been added");
-                done.setTitle("Done");
-                done.showAndWait();
+                if (parseInput(name) < 0) {
+                    Alert error = new Alert(Alert.AlertType.ERROR,
+                            "Company name column has to be provided");
+                    error.setTitle("Missing name");
+                    error.showAndWait();
+                } else if (fileLabel.getText().equals("")) {
+                    Alert error = new Alert(Alert.AlertType.ERROR,
+                            "Open CSV file");
+                    error.setTitle("CSV file missing");
+                    error.showAndWait();
+                } else {
+                    readWriteCSV.run(file, company.getText(), skipFirstRow.isSelected(),
+                            parseInput(country), parseInput(name), parseInput(code),
+                            Arrays.asList(excluded.getText().toLowerCase().split("\n")));
+                    Alert done = new Alert(Alert.AlertType.INFORMATION,
+                            "ID's has been added");
+                    done.setTitle("Done");
+                    done.showAndWait();
+                }
             }
         });
         open.setOnAction(event -> {
-            fc.setInitialDirectory(file.getParentFile());
+            fc.setInitialDirectory(dir);
             File csvFile = fc.showOpenDialog(primaryStage);
             if (csvFile != null && csvFile.length() != 0) {
                 file = csvFile;
+                dir = file.getParentFile();
                 fileLabel.setText(file.getAbsolutePath());
+                pref.put(USER_DIR, dir.getAbsolutePath());
             } else {
                 Alert error = new Alert(Alert.AlertType.ERROR,
                         "Open CSV file");
@@ -132,10 +139,26 @@ public class Main extends Application {
             alert.setTitle("Exit");
             alert.setHeaderText("Exit");
 
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.get() == ButtonType.YES) {
-                readWriteExcluded.write(excluded.getText());
-                Platform.exit();
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.YES) {
+                    readWriteExcluded.write(excluded.getText());
+                    Platform.exit();
+                }
+            });
+        });
+        singleMass.setOnAction(e -> {
+            if (singleMass.getText().equals("Single")) {
+                singleMass.setText("Mass");
+                name.setPromptText("Name Column");
+                country.setPromptText("Country Column");
+                code.setPromptText("Code Column");
+                singleOutput.setVisible(false);
+            } else {
+                singleMass.setText("Single");
+                name.setPromptText("Name");
+                country.setPromptText("Country");
+                code.setPromptText("Code");
+                singleOutput.setVisible(true);
             }
         });
 
@@ -144,22 +167,21 @@ public class Main extends Application {
         gridPane.setHgap(10);
         gridPane.setVgap(10);
 
-        gridPane.add(company, 1, 0);
-        gridPane.add(singleOutput, 1, 1);
+        gridPane.add(skipFirstRow, 0, 0);
+        gridPane.add(singleOutput, 1, 0);
 
-        gridPane.add(startSingle, 0, 2);
-        gridPane.add(singleInput, 1, 2);
+        gridPane.add(singleMass, 0, 1);
+        gridPane.add(company, 1, 1);
 
-        gridPane.add(skipFirstRow, 0, 3);
-        gridPane.add(columns, 1, 3);
+        gridPane.add(input, 1, 2);
 
-        gridPane.add(excludedLabel, 0, 4);
-        gridPane.add(excluded, 1, 4);
+        gridPane.add(excludedLabel, 0, 3);
+        gridPane.add(excluded, 1, 3);
 
-        gridPane.add(buttons, 0, 5);
-        gridPane.add(open, 1, 5);
+        gridPane.add(buttons, 0, 4);
+        gridPane.add(open, 1, 4);
         setHalignment(open, HPos.RIGHT);
-        gridPane.add(fileLabel, 1, 5);
+        gridPane.add(fileLabel, 1, 4);
 
         Scene scene = new Scene(gridPane);
 
