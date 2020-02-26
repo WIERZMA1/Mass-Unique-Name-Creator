@@ -64,6 +64,7 @@ public class Main extends Application {
         singleOutput.setPromptText("Output");
         singleOutput.setEditable(false);
         skipFirstRow.setSelected(true);
+        skipFirstRow.setVisible(false);
         company.setPromptText("Company prefix");
         fileLabel.setMaxWidth(400);
 
@@ -152,12 +153,14 @@ public class Main extends Application {
                 name.setPromptText("Name Column");
                 country.setPromptText("Country Column");
                 code.setPromptText("Code Column");
+                skipFirstRow.setVisible(true);
                 singleOutput.setVisible(false);
             } else {
                 singleMass.setText("Single");
                 name.setPromptText("Name");
                 country.setPromptText("Country");
                 code.setPromptText("Code");
+                skipFirstRow.setVisible(false);
                 singleOutput.setVisible(true);
             }
         });
@@ -167,10 +170,10 @@ public class Main extends Application {
         gridPane.setHgap(10);
         gridPane.setVgap(10);
 
-        gridPane.add(skipFirstRow, 0, 0);
+        gridPane.add(singleMass, 0, 0);
         gridPane.add(singleOutput, 1, 0);
 
-        gridPane.add(singleMass, 0, 1);
+        gridPane.add(skipFirstRow, 0, 1);
         gridPane.add(company, 1, 1);
 
         gridPane.add(input, 1, 2);
