@@ -1,4 +1,4 @@
-package UniqueID;
+package com.uniqueid.creator;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -6,6 +6,7 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
@@ -192,6 +193,7 @@ public class Main extends Application {
 
         primaryStage.setScene(scene);
         primaryStage.setTitle("Unique ID creator");
+        primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/keyboard.png")));
         primaryStage.show();
     }
 
